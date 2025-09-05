@@ -1,0 +1,150 @@
+# Base URL
+{{BASE_URL}} = http://localhost:5050/api
+
+# 1) Signup
+POST {{BASE_URL}}/auth/signup
+Content-Type: application/json
+
+{
+  "name": "Alice Example",
+  "email": "alice@example.com",
+  "password": "password123"
+}
+
+# Response 201
+{
+  "user": { "id": "66d6d6...", "name": "Alice Example", "email": "alice@example.com" },
+  "token": "eyJhbGciOiJIUzI1NiIsInR..."
+}
+
+# 2) Login
+POST {{BASE_URL}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "alice@example.com",
+  "password": "password123"
+}
+
+# Response 200
+{
+  "user": { "id": "66d6d6...", "name": "Alice Example", "email": "alice@example.com" },
+  "token": "eyJhbGciOiJIUzI1NiIsInR..."
+}
+
+# 3) Me (protected)
+GET {{BASE_URL}}/auth/me
+Authorization: Bearer {{TOKEN}}
+
+# Response 200
+{ "user": { "id": "...", "name": "Alice Example", "email": "alice@example.com" } }
+
+# 4) Create Event (creator auto-added as participant)
+POST {{BASE_URL}}/events
+Authorization: Bearer {{TOKEN}}
+Content-Type: application/json
+
+{
+  "title": "Team Dinner",
+  "description": "Pick date and restaurant",
+  "dateOptions": [
+    { "label": "2025-09-10 19:00" },
+    { "label": "2025-09-12 19:00" }
+  ],
+  "poll": {
+    "question": "Which date works best?",
+    "options": [
+      { "label": "Sep 10" },
+      { "label": "Sep 12" }
+    ]
+  },
+  "participants": [] 
+}
+
+# Response 201
+{ "event": { "...": "created event document" } }
+
+# 5) List Events created by me
+GET {{BASE_URL}}/events?scope=created
+Authorization: Bearer {{TOKEN}}
+
+# 6) List Events I'm invited to
+GET {{BASE_URL}}/events?scope=invited
+Authorization: Bearer {{TOKEN}}
+
+# 7) Get Event by ID
+GET {{BASE_URL}}/events/{{EVENT_ID}}
+Authorization: Bearer {{TOKEN}}
+
+# 8) Update Event (creator only)
+PATCH {{BASE_URL}}/events/{{EVENT_ID}}
+Authorization: Bearer {{TOKEN}}
+Content-Type: application/json
+
+{
+  "title": "Team Dinner - Updated",
+  "description": "Updated notes",
+  "dateOptions": [
+    { "label": "2025-09-11 19:00" },
+    { "label": "2025-09-12 19:00" }
+  ]
+}
+
+# 9) Delete Event (creator only)
+DELETE {{BASE_URL}}/events/{{EVENT_ID}}
+Authorization: Bearer {{TOKEN}}
+
+# 10) Invite Users (creator only)
+POST {{BASE_URL}}/events/{{EVENT_ID}}/invitations
+Authorization: Bearer {{TOKEN}}
+Content-Type: application/json
+
+{
+  "userIds": ["66d700000000000000000001", "66d700000000000000000002"]
+}
+
+# Response 201
+{
+  "invitations": [
+    { "_id": "...", "event": "{{EVENT_ID}}", "toUser": "66d700000000000000000001", "status": "pending", "createdBy": "..." },
+    { "_id": "...", "event": "{{EVENT_ID}}", "toUser": "66d700000000000000000002", "status": "pending", "createdBy": "..." }
+  ]
+}
+
+# 11) List My Invitations
+GET {{BASE_URL}}/invitations
+Authorization: Bearer {{TOKEN}}
+
+# 12) Respond to Invitation
+POST {{BASE_URL}}/invitations/{{INVITATION_ID}}/respond
+Authorization: Bearer {{TOKEN}}
+Content-Type: application/json
+
+{ "action": "accept" }   // or "decline"
+
+# 13) Vote in Event Poll (participant or creator)
+POST {{BASE_URL}}/events/{{EVENT_ID}}/votes
+Authorization: Bearer {{TOKEN}}
+Content-Type: application/json
+
+{ "optionId": "{{OPTION_ID}}" }
+
+# 14) Poll Results
+GET {{BASE_URL}}/events/{{EVENT_ID}}/results
+Authorization: Bearer {{TOKEN}}
+
+# Error examples
+
+# Validation error example
+POST {{BASE_URL}}/auth/signup
+Content-Type: application/json
+
+{ "email": "bad", "password": "123" }
+
+# Response 400
+{ "error": "Validation failed", "details": [ { "message": "...", "path": ["body","email"] } ] }
+
+# Unauthorized example
+GET {{BASE_URL}}/events
+# Response 401
+{ "error": "Missing Authorization header" }
